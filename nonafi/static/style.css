@@ -65,3 +65,7 @@ body { display: flex; }
 #empty { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center;
   gap: 16px; font-size: 24px; color: var(--muted); text-align: center; padding: 40px; }
 #empty .big { font-size: 44px; color: var(--fg); font-weight: 700; }
+
+/* Idle dimming: a dark overlay that swallows the first touch */
+#dim { position: fixed; inset: 0; background: #000; opacity: 0; transition: opacity 2s; z-index: 10; }
+#dim.on { opacity: 0.7; }

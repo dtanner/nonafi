@@ -131,6 +131,22 @@
   document.addEventListener("contextmenu", (e) => e.preventDefault());
   document.addEventListener("gesturestart", (e) => e.preventDefault());
 
+  // ---- idle dimming ---------------------------------------------------
+  // After IDLE_MS without a touch, dim the screen. The next touch only wakes it.
+  const IDLE_MS = 10 * 60 * 1000;
+  const dim = $("dim");
+  let idleTimer;
+  function goDim() { dim.hidden = false; requestAnimationFrame(() => dim.classList.add("on")); }
+  function wake() {
+    dim.classList.remove("on");
+    setTimeout(() => { if (!dim.classList.contains("on")) dim.hidden = true; }, 2000);
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(goDim, IDLE_MS);
+  }
+  dim.addEventListener("pointerdown", (e) => { e.stopPropagation(); e.preventDefault(); wake(); });
+  document.addEventListener("pointerdown", wake, true);
+  wake();
+
   renderPanel();
   loadAlbums();
   setInterval(loadAlbums, 15000);   // pick up newly uploaded music

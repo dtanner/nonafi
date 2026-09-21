@@ -13,6 +13,7 @@ Runs entirely as the normal desktop user on the Pi. No sudo needed.
 - `pi/nonafi.service` runs the server as a systemd user service.
 - `pi/kiosk.sh` launches Chromium full-screen on the touchscreen, started from `~/.config/labwc/autostart`.
 - Volume buttons set the real system volume through PipeWire (`wpctl`).
+- After ten minutes without a touch the page fades to about 30% brightness. The next touch only wakes it, so a wake-up tap can never start an album. The panel is an LCD, so there is no burn-in risk; this just saves backlight and stray light at night.
 - The server listens on localhost only. The kiosk is the only client, so nothing is exposed to the network. Set `NONAFI_HOST=0.0.0.0` in the service file if you want to open the page from another device.
 - Chromium's remote debugging port stays off unless `~/.config/nonafi/debug` exists on the Pi. It is handy for driving the UI from a script while developing.
 
