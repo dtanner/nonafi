@@ -58,7 +58,7 @@ just deploy          # sync code, install deps, (re)start server and kiosk
 just restart         # restart only the server
 just restart-kiosk   # relaunch the full-screen browser
 just logs            # server log
-just screenshot      # grab the Pi's screen into captures/
+just screenshot      # grab the Pi's screen into screenshots/
 just sinks           # list audio outputs
 just use-sink 58     # switch output, e.g. to USB speakers
 just dev             # run the server on the Mac against ./music

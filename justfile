@@ -76,10 +76,10 @@ list:
 logs:
     ssh {{pi_host}} 'journalctl --user -u nonafi.service -n 50 -f'
 
-# Take a screenshot of the Pi's screen and save it to captures/.
+# Take a screenshot of the Pi's screen and save it to screenshots/ (git-ignored).
 screenshot:
-    mkdir -p captures
-    ssh {{pi_host}} 'WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/$(id -u) grim /tmp/nonafi.png' && scp -q {{pi_host}}:/tmp/nonafi.png captures/$(date +%Y%m%d-%H%M%S).png && ls -t captures | head -1
+    mkdir -p screenshots
+    ssh {{pi_host}} 'WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/$(id -u) grim /tmp/nonafi.png' && scp -q {{pi_host}}:/tmp/nonafi.png screenshots/$(date +%Y%m%d-%H%M%S).png && ls -t screenshots | head -1
 
 # Open a shell on the Pi.
 ssh:
