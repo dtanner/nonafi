@@ -79,9 +79,9 @@ def post(url: str, obj: dict) -> None:
         log("post failed:", e)
 
 
-def albums(url: str) -> list[dict]:
+def artists(url: str) -> list[dict]:
     try:
-        return json.loads(urllib.request.urlopen(url + "/api/albums", timeout=5).read())
+        return json.loads(urllib.request.urlopen(url + "/api/artists", timeout=5).read())
     except Exception:
         return []
 
@@ -89,7 +89,12 @@ def albums(url: str) -> list[dict]:
 # --- intent -----------------------------------------------------------------
 
 def normalize(text: str) -> str:
-    return " ".join(re.sub(r"[^a-z0-9 ]+", " ", text.lower()).split())
+    return " ".join(re.sub(r"[^a-z0-9 ]+", " ", text.lower().replace("&", " and ")).split())
+
+
+def _sort_name(name: str) -> str:
+    """'The Beatles' also matches 'beatles'."""
+    return re.sub(r"^(the|a|an)\s+", "", name.strip(), flags=re.IGNORECASE)
 
 
 def interpret(text: str, lib: list[dict]) -> dict | None:
@@ -108,20 +113,20 @@ def interpret(text: str, lib: list[dict]) -> dict | None:
     if not m and not (words & {"music", "song", "songs", "album"}):
         return None
     rest = normalize(m.group(1) if m else t)
-    rest = re.sub(r"\b(some|the|a|an|me|please|album|by|music|songs?|something)\b", " ", rest)
+    rest = re.sub(r"\b(some|the|a|an|me|please|album|artist|by|from|music|songs?|something)\b", " ", rest)
     rest = " ".join(rest.split())
     if not rest:
         return {"action": "play"}
-    best = match_album(rest, lib)
+    best = match_artist(rest, lib)
     if best:
-        return {"action": "play_album", "album": best["id"], "title": best["title"]}
+        return {"action": "play_artist", "artist": best["id"], "name": best["name"]}
     return {"action": "play"}
 
 
-def match_album(query: str, lib: list[dict]) -> dict | None:
+def match_artist(query: str, lib: list[dict]) -> dict | None:
     scored = []
     for a in lib:
-        for cand in (a["title"], a.get("artist", ""), f'{a["title"]} {a.get("artist", "")}'):
+        for cand in (a["name"], _sort_name(a["name"])):
             c = normalize(cand)
             if not c:
                 continue
@@ -184,7 +189,7 @@ def main(argv=None):
                                          condition_on_previous_text=False)
         text = " ".join(s.text.strip() for s in segments).strip()
         log(f"heard {text!r} in {time.time() - t0:.1f}s")
-        cmd = interpret(text, albums(url))
+        cmd = interpret(text, artists(url))
         post(url, {"action": "heard", "text": text, "command": cmd})
         if cmd:
             log("command:", cmd)

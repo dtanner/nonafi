@@ -2,13 +2,15 @@
 
 A one-screen jukebox for a Raspberry Pi 5 with a 7" touchscreen, built for someone who should never have to learn an interface.
 
-Everything is on a single screen. The right side shows pages of big album covers with up/down arrows when there is more than one page. Tap a cover and it plays from the first song. The left side shows what is playing with a big Play/Pause and Next. Volume is controlled on the speakers. The playing album gets a gold border. Songs play through in order and stop at the end of the album. Tapping the album that is already playing does nothing, so a stray tap never restarts it.
+Everything is on a single screen. The right side shows pages of big artist tiles with up/down arrows when there is more than one page. Tap an artist and it plays all of their songs from the first one. The left side shows what is playing with a big Play/Pause, Previous, and Next. Volume is controlled on the speakers. The playing artist gets a gold border. Songs play through in order and stop at the end of the artist's list. Tapping the artist that is already playing does nothing, so a stray tap never restarts it. Tapping the cover or artist name on the left shows that artist's songs on the right, seven to a page with the same up/down arrows. Tap a song to play it, or the big Artists button to go back. The list also closes by itself after fifteen seconds without a touch.
+
+There are no albums in the interface. One artist, one tile, one list of songs.
 
 Runs entirely as the normal desktop user on the Pi. No sudo needed.
 
 ## How it works
 
-- `nonafi/` is a small Python web server. It scans `~/Music` on the Pi, reads tags and cover art with mutagen, and serves a single-page UI plus the audio files.
+- `nonafi/` is a small Python web server. It scans `~/Music` on the Pi, groups songs by artist, reads tags and cover art with mutagen, and serves a single-page UI plus the audio files.
 - `nonafi/static/` is the UI, one page sized for 1024x600.
 - `pi/nonafi.service` runs the server as a systemd user service; `pi/nonafi-voice.service` runs voice control beside it.
 - `pi/kiosk.sh` launches Chromium full-screen on the touchscreen, started from `~/.config/labwc/autostart`.
@@ -21,8 +23,8 @@ Runs entirely as the normal desktop user on the Pi. No sudo needed.
 
 Plug in a USB microphone and say **"Hey Jarvis"**, wait for the chime, then:
 
-- "play music" — resumes, or picks a random album if nothing is up
-- "play [album or artist name]" — fuzzy-matched against the library, so close is good enough
+- "play music" — resumes, or picks a random artist if nothing is up
+- "play [artist name]" — fuzzy-matched against the artist names, so close is good enough ("beatles" finds The Beatles)
 - "pause" / "stop"
 - "next" / "skip"
 
@@ -33,20 +35,36 @@ The wake word is "Hey Jarvis" because that is a stock openWakeWord model. "Hey N
 ```bash
 just voice-logs                 # wake-word scores, transcripts, chosen commands
 just restart-voice
-just say "play demo album two"  # act on a phrase without speaking it
+just say "play the beatles"     # act on a phrase without speaking it
 ```
 
 ## Adding music
 
-Put each album in its own folder. Tags are used when present, otherwise the folder name becomes the album title. Any mp3, m4a, flac, ogg, opus, or wav works in Chromium.
+Put each artist in their own folder under `~/Music` on the Pi. The folder name is what shows on the tile. Inside, any layout works: songs straight in the folder, or one subfolder per album. Songs are ordered by subfolder, then album tag, then disc and track number, so albums stay together and in order. Any mp3, m4a, flac, ogg, opus, or wav works in Chromium.
 
-Cover art is taken from the embedded tag, then from a `cover.jpg` / `folder.jpg` / any image in the folder, and finally a generated placeholder with the album name.
+```
+Music/
+  The Beatles/
+    cover.jpg
+    01 - Help!.mp3
+    ...
+  Jim Croce/
+    I Got a Name/
+      cover.jpg
+      01 - I Got a Name.mp3
+    Life & Times/
+      ...
+```
+
+Files dropped straight into `~/Music` with no folder are grouped by their album-artist (or artist) tag instead.
+
+The artist's picture is the first of: a `cover.jpg` / `folder.jpg` / `artist.jpg` / any image in the artist folder, then the same in its subfolders (so an album's `cover.jpg` is used when there is nothing above it), then the first embedded picture in the songs, and finally a generated placeholder with the artist's name. To pick the picture for an artist with several albums, drop a `cover.jpg` in the artist folder.
 
 ```bash
-just upload ~/Music/"Some Album"          # copies the folder into ~/Music on the Pi
-just upload ~/Music/"Album A" ~/Music/"Album B"
+just upload ~/Music/Mom/*                 # copies each artist folder into ~/Music on the Pi
+just upload ~/Music/Mom/"The Beatles"
 just list                                 # what is on the Pi
-just remove "Some Album"                  # delete an album from the Pi
+just remove "The Beatles"                 # delete an artist from the Pi
 ```
 
 The UI picks up new music within about 15 seconds. `just upload` also triggers a rescan immediately.

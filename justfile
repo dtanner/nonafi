@@ -41,21 +41,21 @@ restart-voice:
 voice-logs:
     ssh {{pi_host}} 'journalctl --user -u nonafi-voice.service -n 50 -f'
 
-# Act on a phrase as if it had been spoken, e.g. `just say "play demo album two"`. Prints the command it chose.
+# Act on a phrase as if it had been spoken, e.g. `just say "play the beatles"`. Prints the command it chose.
 say text:
-    ssh {{pi_host}} 'cd ~/nonafi && .venv/bin/python -c "from nonafi import voice; u=\"http://127.0.0.1:8080\"; c=voice.interpret(\"{{text}}\", voice.albums(u)); print(c); c and voice.post(u, c)"'
+    ssh {{pi_host}} 'cd ~/nonafi && .venv/bin/python -c "from nonafi import voice; u=\"http://127.0.0.1:8080\"; c=voice.interpret(\"{{text}}\", voice.artists(u)); print(c); c and voice.post(u, c)"'
 
 # Relaunch the full-screen browser on the Pi's touchscreen.
 restart-kiosk:
     ssh {{pi_host}} 'pkill -f "kiosk\\.s[h]"; pkill -f "nonafi-kios[k]"; true'
     ssh {{pi_host}} 'WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/$(id -u) setsid -f /usr/bin/lwrespawn {{pi_path}}/pi/kiosk.sh > /dev/null 2>&1 < /dev/null; echo kiosk started'
 
-# Upload music: `just upload ~/Music/Some\ Album` copies that folder into the Pi's Music folder.
+# Upload music: `just upload ~/Music/Mom/*` copies each artist folder into the Pi's Music folder.
 upload +folders:
     rsync -avh --progress "$@" {{pi_host}}:~/Music/
     ssh {{pi_host}} 'curl -s -X POST http://127.0.0.1:8080/api/rescan; echo'
 
-# Delete an album folder from the Pi: `just remove "Demo Album One"`.
+# Delete an artist folder from the Pi: `just remove "The Beatles"`.
 remove folder:
     ssh {{pi_host}} "cd ~/Music && rm -rv '{{folder}}'"
     ssh {{pi_host}} 'curl -s -X POST http://127.0.0.1:8080/api/rescan; echo'

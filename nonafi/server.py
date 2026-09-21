@@ -1,4 +1,4 @@
-"""HTTP server: static UI, album JSON, cover images, audio with Range support."""
+"""HTTP server: static UI, artist JSON, cover images, audio with Range support."""
 
 from __future__ import annotations
 
@@ -79,16 +79,16 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         if path == "/":
             return self._file(STATIC / "index.html", "text/html; charset=utf-8", cache=False)
-        if path == "/api/albums":
+        if path == "/api/artists":
             self.library.refresh_if_changed()
             return self._json(self.library.to_json())
         if path == "/api/events":
             return self._events()
         if path.startswith("/covers/"):
             aid = path[len("/covers/"):].split(".")[0].split("-")[0]
-            album = self.library.albums.get(aid)
-            if album and album.cover:
-                return self._bytes(album.cover, "image/jpeg")
+            artist = self.library.artists.get(aid)
+            if artist and artist.cover:
+                return self._bytes(artist.cover, "image/jpeg")
             return self._error(HTTPStatus.NOT_FOUND)
         if path.startswith("/audio/"):
             tid = path[len("/audio/"):].split(".")[0]
@@ -113,9 +113,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/rescan":
             self.library._signature = None
             changed = self.library.refresh_if_changed()
-            return self._json({"albums": len(self.library.albums), "changed": changed})
+            return self._json({"artists": len(self.library.artists), "changed": changed})
         if path == "/api/command":
-            # From the voice service: {"action": "play"|"pause"|"next"|"play_album"|"listening"|"heard", ...}
+            # From the voice service: {"action": "play"|"pause"|"next"|"play_artist"|"listening"|"heard", ...}
             if not isinstance(body, dict) or not body.get("action"):
                 return self._error(HTTPStatus.BAD_REQUEST)
             return self._json({"clients": self.events.publish(body)})
@@ -224,7 +224,7 @@ def main(argv=None):
     set_output_full()
     server = ThreadingHTTPServer((host, port), Handler)
     server.daemon_threads = True
-    print(f"nonafi: {len(lib.albums)} albums from {music}, listening on http://{host}:{port}", flush=True)
+    print(f"nonafi: {len(lib.artists)} artists from {music}, listening on http://{host}:{port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

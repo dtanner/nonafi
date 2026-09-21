@@ -5,3 +5,4 @@ __pycache__/
 music/
 .env
 screenshots/
+*.egg-info/

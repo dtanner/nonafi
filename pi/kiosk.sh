@@ -6,7 +6,7 @@ export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
 # Wait for the server so the first page load isn't an error page.
 for _ in $(seq 1 60); do
-  curl -fs -o /dev/null "$URL/api/albums" && break
+  curl -fs -o /dev/null "$URL/api/artists" && break
   sleep 1
 done
 

@@ -1,55 +1,118 @@
-// nonafi jukebox UI: one screen. Left: what's playing. Right: pages of albums.
+// nonafi jukebox UI: one screen. Left: what's playing. Right: pages of artists.
 (() => {
   const $ = (id) => document.getElementById(id);
   const audio = $("audio");
   const PER_PAGE = 6;
-  let albums = [];
-  let current = null;   // album being played
-  let index = 0;        // song index in that album
+  let artists = [];
+  let current = null;   // artist being played
+  let index = 0;        // song index in that artist's list
   let page = 0;
+  // Song list for the playing artist, shown in place of the grid.
+  const SONGS_PER_PAGE = 7, SONGS_TIMEOUT_MS = 15 * 1000;
+  let songsOpen = false, songPage = 0, songsTimer;
 
-  // ---- album pages ----------------------------------------------------
-  async function loadAlbums() {
+  // ---- artist pages ---------------------------------------------------
+  async function loadArtists() {
     let data;
-    try { data = await (await fetch("/api/albums", { cache: "no-store" })).json(); } catch (e) { return; }
+    try { data = await (await fetch("/api/artists", { cache: "no-store" })).json(); } catch (e) { return; }
     const key = (list) => JSON.stringify(list.map(a => a.id + a.cover + a.tracks.length));
-    if (key(data) === key(albums)) return;
-    albums = data;
-    renderGrid();
+    if (key(data) === key(artists)) return;
+    artists = data;
+    render();
+  }
+
+  // The right side shows either artist pages or the playing artist's songs; the pager serves both.
+  function render() {
+    if (songsOpen && current) renderSongs(); else renderGrid();
+  }
+  function setPager(cur, pages) {
+    $("pager").hidden = pages <= 1;
+    $("page-num").textContent = `${cur + 1} / ${pages}`;
+  }
+  function turnPage(delta) {
+    if (songsOpen && current) {
+      songPage = Math.max(0, Math.min(Math.ceil(current.tracks.length / SONGS_PER_PAGE) - 1, songPage + delta));
+    } else {
+      page = Math.max(0, Math.min(Math.ceil(artists.length / PER_PAGE) - 1, page + delta));
+    }
+    render();
   }
 
   function renderGrid() {
-    const pages = Math.max(1, Math.ceil(albums.length / PER_PAGE));
+    $("songs").hidden = true;
+    const pages = Math.max(1, Math.ceil(artists.length / PER_PAGE));
     page = Math.min(page, pages - 1);
     const grid = $("grid");
+    grid.hidden = false;
     grid.innerHTML = "";
-    $("empty").hidden = albums.length > 0;
-    $("pager").hidden = pages <= 1;
-    $("page-num").textContent = `${page + 1} / ${pages}`;
-    for (const a of albums.slice(page * PER_PAGE, (page + 1) * PER_PAGE)) {
+    $("empty").hidden = artists.length > 0;
+    setPager(page, pages);
+    for (const a of artists.slice(page * PER_PAGE, (page + 1) * PER_PAGE)) {
       const b = document.createElement("button");
-      b.className = "album" + (current && current.id === a.id ? " current" : "");
+      b.className = "artist" + (current && current.id === a.id ? " current" : "");
       b.dataset.id = a.id;
-      b.innerHTML = `<img src="${a.cover}" alt=""><div class="name"></div><div class="who"></div>`;
-      b.querySelector(".name").textContent = a.title;
-      b.querySelector(".who").textContent = a.artist;
-      b.addEventListener("click", () => tapAlbum(a));
+      b.innerHTML = `<img src="${a.cover}" alt=""><div class="name"></div>`;
+      b.querySelector(".name").textContent = a.name;
+      b.addEventListener("click", () => tapArtist(a));
       grid.appendChild(b);
     }
   }
-  $("page-up").addEventListener("click", () => { page = Math.max(0, page - 1); renderGrid(); });
-  $("page-down").addEventListener("click", () => {
-    page = Math.min(Math.ceil(albums.length / PER_PAGE) - 1, page + 1); renderGrid();
-  });
+  $("page-up").addEventListener("click", () => turnPage(-1));
+  $("page-down").addEventListener("click", () => turnPage(1));
+
+  // ---- song list ------------------------------------------------------
+  function renderSongs() {
+    $("grid").hidden = true;
+    $("empty").hidden = true;
+    const songs = $("songs");
+    songs.hidden = false;
+    const pages = Math.max(1, Math.ceil(current.tracks.length / SONGS_PER_PAGE));
+    songPage = Math.min(songPage, pages - 1);
+    setPager(songPage, pages);
+    const list = $("song-list");
+    list.innerHTML = "";
+    current.tracks.forEach((t, i) => {
+      if (Math.floor(i / SONGS_PER_PAGE) !== songPage) return;
+      const b = document.createElement("button");
+      b.className = "btn song" + (i === index ? " current" : "");
+      b.innerHTML = `<span class="num"></span><span class="name"></span>`;
+      b.querySelector(".num").textContent = i + 1;
+      b.querySelector(".name").textContent = t.title;
+      b.addEventListener("click", () => { index = i; playTrack(); closeSongs(); });
+      list.appendChild(b);
+    });
+  }
+  function openSongs() {
+    songsOpen = true;
+    songPage = Math.floor(index / SONGS_PER_PAGE);
+    touchSongs();
+    render();
+  }
+  function closeSongs() {
+    if (!songsOpen) return;
+    songsOpen = false;
+    clearTimeout(songsTimer);
+    render();
+  }
+  // The list closes on its own after a while without a touch, so a stray open never sticks.
+  function touchSongs() {
+    if (!songsOpen) return;
+    clearTimeout(songsTimer);
+    songsTimer = setTimeout(closeSongs, SONGS_TIMEOUT_MS);
+  }
+  $("songs-back").addEventListener("click", closeSongs);
+  // The now-playing cover and artist name open the list.
+  for (const id of ["cover", "artist-name"]) $(id).addEventListener("click", () => { if (current) openSongs(); });
 
   // ---- playing --------------------------------------------------------
-  function tapAlbum(a) {
-    // Tapping the album that's already playing does nothing (no accidental restarts).
+  function tapArtist(a) {
+    // Tapping the artist that's already playing does nothing (no accidental restarts).
     if (current && current.id === a.id && !audio.paused) return;
     current = a;
     index = 0;
     playTrack();
-    renderGrid();
+    closeSongs();
+    render();
   }
 
   function playTrack() {
@@ -57,6 +120,7 @@
     audio.src = current.tracks[index].url;
     audio.play().catch(() => {});
     renderPanel();
+    if (songsOpen) render();   // keep the highlighted song current
   }
 
   function renderPanel() {
@@ -65,7 +129,7 @@
     if (!current) return;
     const t = current.tracks[index] || {};
     $("cover").src = current.cover;
-    $("album-title").textContent = current.title;
+    $("artist-name").textContent = current.name;
     setTrackTitle(t.title || "");
     $("toggle").classList.toggle("playing", !audio.paused);
   }
@@ -110,7 +174,7 @@
       index += 1;
       playTrack();
     } else {
-      // Album finished: rewind to the first song and wait for Play.
+      // List finished: rewind to the first song and wait for Play.
       index = 0;
       audio.src = current.tracks[0].url;
       renderPanel();
@@ -134,7 +198,7 @@
   const IDLE_MS = 10 * 60 * 1000;
   const dim = $("dim");
   let idleTimer;
-  function goDim() { dim.hidden = false; requestAnimationFrame(() => dim.classList.add("on")); }
+  function goDim() { closeSongs(); dim.hidden = false; requestAnimationFrame(() => dim.classList.add("on")); }
   function wake() {
     dim.classList.remove("on");
     setTimeout(() => { if (!dim.classList.contains("on")) dim.hidden = true; }, 2000);
@@ -142,7 +206,7 @@
     idleTimer = setTimeout(goDim, IDLE_MS);
   }
   dim.addEventListener("pointerdown", (e) => { e.stopPropagation(); e.preventDefault(); wake(); });
-  document.addEventListener("pointerdown", wake, true);
+  document.addEventListener("pointerdown", () => { wake(); touchSongs(); }, true);
   wake();
 
   // ---- voice commands -------------------------------------------------
@@ -166,11 +230,11 @@
       o.start(); o.stop(ctx.currentTime + 0.25);
     } catch (e) {}
   }
-  function pickAlbum(id) {
-    const a = albums.find(x => x.id === id);
+  function pickArtist(id) {
+    const a = artists.find(x => x.id === id);
     if (!a) return;
-    page = Math.floor(albums.indexOf(a) / PER_PAGE);
-    tapAlbum(a);
+    page = Math.floor(artists.indexOf(a) / PER_PAGE);
+    tapArtist(a);
   }
   function onCommand(cmd) {
     wake();
@@ -182,11 +246,11 @@
       case "heard":
         showBanner(cmd.text ? `“${cmd.text}”` : "Didn't catch that", 4000);
         break;
-      case "play_album":
-        pickAlbum(cmd.album);
+      case "play_artist":
+        pickArtist(cmd.artist);
         break;
       case "play":
-        if (!current && albums.length) pickAlbum(albums[Math.floor(Math.random() * albums.length)].id);
+        if (!current && artists.length) pickArtist(artists[Math.floor(Math.random() * artists.length)].id);
         else if (current && audio.paused) audio.play().catch(() => {});
         break;
       case "pause":
@@ -204,7 +268,7 @@
   }
 
   renderPanel();
-  loadAlbums();
-  setInterval(loadAlbums, 15000);   // pick up newly uploaded music
+  loadArtists();
+  setInterval(loadArtists, 15000);   // pick up newly uploaded music
   listen();
 })();

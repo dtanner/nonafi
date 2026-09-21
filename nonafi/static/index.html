@@ -11,12 +11,12 @@
 <aside id="panel">
   <div id="idle">
     <div class="idle-icon">&#9835;</div>
-    <div class="idle-text">Tap an album to play</div>
+    <div class="idle-text">Tap an artist to play</div>
     <div class="idle-arrow">&#10140;</div>
   </div>
   <div id="playing" hidden>
     <img id="cover" alt="">
-    <div id="album-title" class="title"></div>
+    <div id="artist-name" class="title"></div>
     <div id="track-title" class="track"><span id="track-text"></span></div>
     <div class="progress"><div id="bar"></div></div>
     <div class="controls">
@@ -36,9 +36,13 @@
 
 <main id="library">
   <div id="grid"></div>
+  <div id="songs" hidden>
+    <button id="songs-back" class="btn back" aria-label="Back to artists"><svg viewBox="0 0 24 24"><path d="M15 4l-8 8 8 8z"/></svg><span>Artists</span></button>
+    <div id="song-list"></div>
+  </div>
   <div id="empty" hidden>
     <div class="big">No music yet</div>
-    <div>Add album folders to the Music folder on this player.</div>
+    <div>Add a folder for each artist to the Music folder on this player.</div>
   </div>
   <div id="pager" hidden>
     <button id="page-up" class="btn arrow" aria-label="Previous page"><svg viewBox="0 0 24 24"><path d="M12 6l9 11H3z"/></svg></button>
