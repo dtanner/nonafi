@@ -10,12 +10,31 @@ Runs entirely as the normal desktop user on the Pi. No sudo needed.
 
 - `nonafi/` is a small Python web server. It scans `~/Music` on the Pi, reads tags and cover art with mutagen, and serves a single-page UI plus the audio files.
 - `nonafi/static/` is the UI, one page sized for 1024x600.
-- `pi/nonafi.service` runs the server as a systemd user service.
+- `pi/nonafi.service` runs the server as a systemd user service; `pi/nonafi-voice.service` runs voice control beside it.
 - `pi/kiosk.sh` launches Chromium full-screen on the touchscreen, started from `~/.config/labwc/autostart`.
 - On startup the server sets the Pi output to full volume and unmuted through PipeWire (`wpctl`), so the speakers' own volume control has its whole range.
 - After ten minutes without a touch the page fades to about 30% brightness. The next touch only wakes it, so a wake-up tap can never start an album. The panel is an LCD, so there is no burn-in risk; this just saves backlight and stray light at night.
 - The server listens on localhost only. The kiosk is the only client, so nothing is exposed to the network. Set `NONAFI_HOST=0.0.0.0` in the service file if you want to open the page from another device.
 - Chromium's remote debugging port stays off unless `~/.config/nonafi/debug` exists on the Pi. It is handy for driving the UI from a script while developing.
+
+## Voice control
+
+Plug in a USB microphone and say **"Hey Jarvis"**, wait for the chime, then:
+
+- "play music" — resumes, or picks a random album if nothing is up
+- "play [album or artist name]" — fuzzy-matched against the library, so close is good enough
+- "pause" / "stop"
+- "next" / "skip"
+
+Everything runs on the Pi. `nonafi/voice.py` listens with [openWakeWord](https://github.com/dscripka/openWakeWord), records until you stop talking, transcribes with [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (`base.en`, about two seconds on a Pi 5), and posts the command to the server, which relays it to the page over server-sent events. The page chimes and shows a banner with what it heard. Music ducks to 15% while it listens so the mic can hear you over it.
+
+The wake word is "Hey Jarvis" because that is a stock openWakeWord model. "Hey Nona" needs a custom model trained with openWakeWord's training notebook; drop the resulting `.onnx` on the Pi and set `NONAFI_WAKEWORD=/path/to/hey_nona.onnx` in `pi/nonafi-voice.service`. Other knobs there: `NONAFI_WAKE_THRESHOLD` (default 0.5, raise it if it false-triggers), `NONAFI_WHISPER` (`small.en` is more accurate and slower), and `NONAFI_MIC` (an ALSA device, defaults to the first USB capture card).
+
+```bash
+just voice-logs                 # wake-word scores, transcripts, chosen commands
+just restart-voice
+just say "play demo album two"  # act on a phrase without speaking it
+```
 
 ## Adding music
 

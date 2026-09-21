@@ -15,12 +15,12 @@ default:
 deploy: sync
     ssh {{pi_host}} 'cd {{pi_path}} && \
       [ -x .venv/bin/python ] || python3 -m venv --system-site-packages .venv && \
-      .venv/bin/pip install -q -e . && \
+      .venv/bin/pip install -q -e '.[voice]' && .venv/bin/pip install -q --no-deps openwakeword && \
       mkdir -p ~/.config/systemd/user ~/.config/labwc ~/Music && \
-      cp pi/nonafi.service ~/.config/systemd/user/nonafi.service && \
+      cp pi/nonafi.service pi/nonafi-voice.service ~/.config/systemd/user/ && \
       systemctl --user daemon-reload && \
-      systemctl --user enable --now nonafi.service && \
-      systemctl --user restart nonafi.service && \
+      systemctl --user enable --now nonafi.service nonafi-voice.service && \
+      systemctl --user restart nonafi.service nonafi-voice.service && \
       grep -q nonafi/pi/kiosk.sh ~/.config/labwc/autostart 2>/dev/null || \
         echo "/usr/bin/lwrespawn $HOME/nonafi/pi/kiosk.sh &" >> ~/.config/labwc/autostart'
     just restart-kiosk
@@ -32,6 +32,18 @@ sync:
 # Restart just the server (after code changes).
 restart:
     ssh {{pi_host}} 'systemctl --user restart nonafi.service && sleep 1 && systemctl --user is-active nonafi.service'
+
+# Restart the voice service.
+restart-voice:
+    ssh {{pi_host}} 'systemctl --user restart nonafi-voice.service && sleep 1 && systemctl --user is-active nonafi-voice.service'
+
+# Tail the voice service log (wake words, transcripts, commands).
+voice-logs:
+    ssh {{pi_host}} 'journalctl --user -u nonafi-voice.service -n 50 -f'
+
+# Act on a phrase as if it had been spoken, e.g. `just say "play demo album two"`. Prints the command it chose.
+say text:
+    ssh {{pi_host}} 'cd ~/nonafi && .venv/bin/python -c "from nonafi import voice; u=\"http://127.0.0.1:8080\"; c=voice.interpret(\"{{text}}\", voice.albums(u)); print(c); c and voice.post(u, c)"'
 
 # Relaunch the full-screen browser on the Pi's touchscreen.
 restart-kiosk:

@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 import mimetypes
 import os
+import queue
 import re
 import subprocess
 import sys
+import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -35,8 +37,38 @@ def set_output_full() -> None:
         pass
 
 
+class Events:
+    """Fan-out of UI commands (from the voice service) to connected pages via SSE."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._subs: list[queue.Queue] = []
+
+    def subscribe(self) -> queue.Queue:
+        q: queue.Queue = queue.Queue(maxsize=32)
+        with self._lock:
+            self._subs.append(q)
+        return q
+
+    def unsubscribe(self, q: queue.Queue) -> None:
+        with self._lock:
+            if q in self._subs:
+                self._subs.remove(q)
+
+    def publish(self, obj: dict) -> int:
+        with self._lock:
+            subs = list(self._subs)
+        for q in subs:
+            try:
+                q.put_nowait(obj)
+            except queue.Full:
+                pass
+        return len(subs)
+
+
 class Handler(BaseHTTPRequestHandler):
     library: Library
+    events = Events()
     protocol_version = "HTTP/1.1"
 
     def log_message(self, fmt, *args):
@@ -50,6 +82,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/albums":
             self.library.refresh_if_changed()
             return self._json(self.library.to_json())
+        if path == "/api/events":
+            return self._events()
         if path.startswith("/covers/"):
             aid = path[len("/covers/"):].split(".")[0].split("-")[0]
             album = self.library.albums.get(aid)
@@ -80,9 +114,37 @@ class Handler(BaseHTTPRequestHandler):
             self.library._signature = None
             changed = self.library.refresh_if_changed()
             return self._json({"albums": len(self.library.albums), "changed": changed})
+        if path == "/api/command":
+            # From the voice service: {"action": "play"|"pause"|"next"|"play_album"|"listening"|"heard", ...}
+            if not isinstance(body, dict) or not body.get("action"):
+                return self._error(HTTPStatus.BAD_REQUEST)
+            return self._json({"clients": self.events.publish(body)})
         return self._error(HTTPStatus.NOT_FOUND)
 
     # --- helpers -------------------------------------------------------
+
+    def _events(self):
+        """Server-sent events: one JSON object per message, keepalive comments every 15s."""
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Connection", "close")
+        self.end_headers()
+        q = self.events.subscribe()
+        try:
+            self.wfile.write(b": connected\n\n")
+            self.wfile.flush()
+            while True:
+                try:
+                    obj = q.get(timeout=15)
+                    self.wfile.write(f"data: {json.dumps(obj)}\n\n".encode())
+                except queue.Empty:
+                    self.wfile.write(b": keepalive\n\n")
+                self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            pass
+        finally:
+            self.events.unsubscribe(q)
 
     def _json(self, obj):
         self._bytes(json.dumps(obj).encode(), "application/json", cache=False)

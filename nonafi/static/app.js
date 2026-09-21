@@ -121,7 +121,66 @@
   document.addEventListener("pointerdown", wake, true);
   wake();
 
+  // ---- voice commands -------------------------------------------------
+  // The voice service posts to /api/command; the server relays it here over SSE.
+  const banner = $("banner");
+  let bannerTimer;
+  function showBanner(text, ms) {
+    banner.textContent = text;
+    banner.hidden = false;
+    clearTimeout(bannerTimer);
+    if (ms) bannerTimer = setTimeout(() => { banner.hidden = true; }, ms);
+  }
+  function chime(freq) {
+    try {
+      const ctx = chime.ctx || (chime.ctx = new (window.AudioContext || window.webkitAudioContext)());
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.25, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      o.connect(g).connect(ctx.destination);
+      o.start(); o.stop(ctx.currentTime + 0.25);
+    } catch (e) {}
+  }
+  function pickAlbum(id) {
+    const a = albums.find(x => x.id === id);
+    if (!a) return;
+    page = Math.floor(albums.indexOf(a) / PER_PAGE);
+    tapAlbum(a);
+  }
+  function onCommand(cmd) {
+    wake();
+    switch (cmd.action) {
+      case "listening":
+        chime(880);
+        showBanner("Listening…", 8000);
+        break;
+      case "heard":
+        showBanner(cmd.text ? `“${cmd.text}”` : "Didn't catch that", 4000);
+        break;
+      case "play_album":
+        pickAlbum(cmd.album);
+        break;
+      case "play":
+        if (!current && albums.length) pickAlbum(albums[Math.floor(Math.random() * albums.length)].id);
+        else if (current && audio.paused) audio.play().catch(() => {});
+        break;
+      case "pause":
+        if (current && !audio.paused) audio.pause();
+        break;
+      case "next":
+        if (current) { index = (index + 1) % current.tracks.length; playTrack(); }
+        break;
+    }
+  }
+  function listen() {
+    const es = new EventSource("/api/events");
+    es.onmessage = (e) => { try { onCommand(JSON.parse(e.data)); } catch (err) {} };
+    es.onerror = () => { es.close(); setTimeout(listen, 3000); };
+  }
+
   renderPanel();
   loadAlbums();
   setInterval(loadAlbums, 15000);   // pick up newly uploaded music
+  listen();
 })();

@@ -5,6 +5,11 @@ description = "A one-screen touchscreen jukebox for a Raspberry Pi"
 requires-python = ">=3.11"
 dependencies = ["mutagen>=1.47", "pillow>=10"]
 
+[project.optional-dependencies]
+# openwakeword is installed with --no-deps (it pins tflite-runtime, which has no Python 3.13 wheels);
+# the ONNX backend only needs these.
+voice = ["numpy", "onnxruntime", "scipy", "scikit-learn", "tqdm", "requests", "faster-whisper>=1.1"]
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
