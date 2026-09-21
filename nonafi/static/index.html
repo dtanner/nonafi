@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Music</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<aside id="panel">
+  <div id="idle">
+    <div class="idle-icon">&#9835;</div>
+    <div class="idle-text">Tap an album to play</div>
+    <div class="idle-arrow">&#10140;</div>
+  </div>
+  <div id="playing" hidden>
+    <img id="cover" alt="">
+    <div id="album-title" class="title"></div>
+    <div id="track-title" class="track"></div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="controls">
+      <button id="toggle" class="btn play" aria-label="Play or pause">
+        <svg id="icon-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg>
+        <svg id="icon-pause" viewBox="0 0 24 24"><path d="M6 4.5h4v15H6zM14 4.5h4v15h-4z"/></svg>
+      </button>
+      <button id="next" class="btn skip" aria-label="Next song">
+        <svg viewBox="0 0 24 24"><path d="M5 5v14l9-7z"/><path d="M16 5h3v14h-3z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="volume">
+    <button id="vol-down" class="btn vol" aria-label="Quieter">&#8722;</button>
+    <div class="vol-meter" id="vol-meter"></div>
+    <button id="vol-up" class="btn vol" aria-label="Louder">+</button>
+  </div>
+</aside>
+
+<main id="library">
+  <div id="grid"></div>
+  <div id="empty" hidden>
+    <div class="big">No music yet</div>
+    <div>Add album folders to the Music folder on this player.</div>
+  </div>
+  <div id="pager" hidden>
+    <button id="page-up" class="btn arrow" aria-label="Previous page"><svg viewBox="0 0 24 24"><path d="M12 6l9 11H3z"/></svg></button>
+    <div id="page-num"></div>
+    <button id="page-down" class="btn arrow" aria-label="Next page"><svg viewBox="0 0 24 24"><path d="M12 18L3 7h18z"/></svg></button>
+  </div>
+</main>
+
+<audio id="audio" preload="auto"></audio>
+<script src="/app.js"></script>
+</body>
+</html>

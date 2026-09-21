@@ -1,0 +1,13 @@
+[Unit]
+Description=nonafi jukebox server
+After=pipewire.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/nonafi
+ExecStart=%h/nonafi/.venv/bin/python -m nonafi --music %h/Music --port 8080
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

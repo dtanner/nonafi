@@ -1,0 +1,178 @@
+"""HTTP server: static UI, album JSON, cover images, audio with Range support, volume."""
+
+from __future__ import annotations
+
+import json
+import mimetypes
+import os
+import re
+import subprocess
+import sys
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+from .library import Library
+
+STATIC = Path(__file__).parent / "static"
+MIME = {
+    ".mp3": "audio/mpeg",
+    ".m4a": "audio/mp4",
+    ".aac": "audio/aac",
+    ".flac": "audio/flac",
+    ".ogg": "audio/ogg",
+    ".opus": "audio/ogg",
+    ".wav": "audio/wav",
+}
+
+
+def get_volume() -> int | None:
+    try:
+        out = subprocess.run(["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"], capture_output=True, text=True, timeout=3).stdout
+        m = re.search(r"([\d.]+)", out)
+        return round(float(m.group(1)) * 100) if m else None
+    except Exception:
+        return None
+
+
+def set_volume(pct: int) -> int | None:
+    pct = max(0, min(100, pct))
+    try:
+        subprocess.run(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", f"{pct / 100:.2f}"], timeout=3)
+        subprocess.run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "0"], timeout=3)
+    except Exception:
+        pass
+    return get_volume()
+
+
+class Handler(BaseHTTPRequestHandler):
+    library: Library
+    protocol_version = "HTTP/1.1"
+
+    def log_message(self, fmt, *args):
+        if os.environ.get("NONAFI_DEBUG"):
+            super().log_message(fmt, *args)
+
+    def do_GET(self):
+        path = self.path.split("?", 1)[0]
+        if path == "/":
+            return self._file(STATIC / "index.html", "text/html; charset=utf-8", cache=False)
+        if path == "/api/albums":
+            self.library.refresh_if_changed()
+            return self._json(self.library.to_json())
+        if path == "/api/volume":
+            return self._json({"volume": get_volume()})
+        if path.startswith("/covers/"):
+            aid = path[len("/covers/"):].split(".")[0].split("-")[0]
+            album = self.library.albums.get(aid)
+            if album and album.cover:
+                return self._bytes(album.cover, "image/jpeg")
+            return self._error(HTTPStatus.NOT_FOUND)
+        if path.startswith("/audio/"):
+            tid = path[len("/audio/"):].split(".")[0]
+            track = self.library.tracks.get(tid)
+            if track and track.path.exists():
+                return self._file(track.path, MIME.get(track.path.suffix.lower(), "application/octet-stream"))
+            return self._error(HTTPStatus.NOT_FOUND)
+        if "/.." not in path and (STATIC / path.lstrip("/")).is_file():
+            f = STATIC / path.lstrip("/")
+            return self._file(f, mimetypes.guess_type(str(f))[0] or "application/octet-stream", cache=False)
+        return self._error(HTTPStatus.NOT_FOUND)
+
+    def do_POST(self):
+        path = self.path.split("?", 1)[0]
+        length = int(self.headers.get("Content-Length") or 0)
+        body = json.loads(self.rfile.read(length) or b"{}") if length else {}
+        if path == "/api/volume":
+            return self._json({"volume": set_volume(int(body.get("volume", 50)))})
+        if path == "/api/rescan":
+            self.library._signature = None
+            changed = self.library.refresh_if_changed()
+            return self._json({"albums": len(self.library.albums), "changed": changed})
+        return self._error(HTTPStatus.NOT_FOUND)
+
+    # --- helpers -------------------------------------------------------
+
+    def _json(self, obj):
+        self._bytes(json.dumps(obj).encode(), "application/json", cache=False)
+
+    def _error(self, status):
+        self.send_response(status)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def _bytes(self, data: bytes, ctype: str, cache=True):
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "max-age=3600" if cache else "no-store")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _file(self, path: Path, ctype: str, cache=True):
+        size = path.stat().st_size
+        start, end = 0, size - 1
+        rng = self.headers.get("Range")
+        partial = False
+        if rng:
+            m = re.match(r"bytes=(\d*)-(\d*)", rng)
+            if m:
+                if m.group(1):
+                    start = int(m.group(1))
+                    if m.group(2):
+                        end = min(int(m.group(2)), size - 1)
+                elif m.group(2):
+                    start = max(0, size - int(m.group(2)))
+                if start > end or start >= size:
+                    self.send_response(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                    self.send_header("Content-Range", f"bytes */{size}")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                partial = True
+        length = end - start + 1
+        self.send_response(HTTPStatus.PARTIAL_CONTENT if partial else HTTPStatus.OK)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(length))
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Cache-Control", "max-age=3600" if cache else "no-store")
+        if partial:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.end_headers()
+        try:
+            with open(path, "rb") as f:
+                f.seek(start)
+                remaining = length
+                while remaining > 0:
+                    chunk = f.read(min(256 * 1024, remaining))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    remaining -= len(chunk)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+
+def main(argv=None):
+    argv = argv if argv is not None else sys.argv[1:]
+    music = Path(os.environ.get("NONAFI_MUSIC", "~/Music")).expanduser()
+    port = int(os.environ.get("NONAFI_PORT", "8080"))
+    for i, a in enumerate(argv):
+        if a == "--music":
+            music = Path(argv[i + 1]).expanduser()
+        if a == "--port":
+            port = int(argv[i + 1])
+    lib = Library(music)
+    lib.refresh_if_changed()
+    Handler.library = lib
+    server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+    server.daemon_threads = True
+    print(f"nonafi: {len(lib.albums)} albums from {music}, listening on http://0.0.0.0:{port}", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    main()
