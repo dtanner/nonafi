@@ -54,7 +54,7 @@ sinks:
 
 # Make a sink the default output, e.g. `just use-sink 58` (id from `just sinks`). Persists across reboots.
 use-sink id:
-    ssh {{pi_host}} 'wpctl set-default {{id}} && wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.6 && wpctl get-volume @DEFAULT_AUDIO_SINK@'
+    ssh {{pi_host}} 'wpctl set-default {{id}} && wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0 && wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl get-volume @DEFAULT_AUDIO_SINK@'
 
 # List what music is on the Pi.
 list:

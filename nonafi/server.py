@@ -1,4 +1,4 @@
-"""HTTP server: static UI, album JSON, cover images, audio with Range support, volume."""
+"""HTTP server: static UI, album JSON, cover images, audio with Range support."""
 
 from __future__ import annotations
 
@@ -26,23 +26,13 @@ MIME = {
 }
 
 
-def get_volume() -> int | None:
+def set_output_full() -> None:
+    """Volume is controlled on the speakers, so give them the full signal."""
     try:
-        out = subprocess.run(["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"], capture_output=True, text=True, timeout=3).stdout
-        m = re.search(r"([\d.]+)", out)
-        return round(float(m.group(1)) * 100) if m else None
-    except Exception:
-        return None
-
-
-def set_volume(pct: int) -> int | None:
-    pct = max(0, min(100, pct))
-    try:
-        subprocess.run(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", f"{pct / 100:.2f}"], timeout=3)
+        subprocess.run(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "1.0"], timeout=3)
         subprocess.run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "0"], timeout=3)
     except Exception:
         pass
-    return get_volume()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -60,8 +50,6 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/albums":
             self.library.refresh_if_changed()
             return self._json(self.library.to_json())
-        if path == "/api/volume":
-            return self._json({"volume": get_volume()})
         if path.startswith("/covers/"):
             aid = path[len("/covers/"):].split(".")[0].split("-")[0]
             album = self.library.albums.get(aid)
@@ -88,8 +76,6 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length) or b"{}") if length else {}
         except ValueError:
             return self._error(HTTPStatus.BAD_REQUEST)
-        if path == "/api/volume":
-            return self._json({"volume": set_volume(int(body.get("volume", 50)))})
         if path == "/api/rescan":
             self.library._signature = None
             changed = self.library.refresh_if_changed()
@@ -173,6 +159,7 @@ def main(argv=None):
     lib = Library(music)
     lib.refresh_if_changed()
     Handler.library = lib
+    set_output_full()
     server = ThreadingHTTPServer((host, port), Handler)
     server.daemon_threads = True
     print(f"nonafi: {len(lib.albums)} albums from {music}, listening on http://{host}:{port}", flush=True)

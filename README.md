@@ -2,7 +2,7 @@
 
 A one-screen jukebox for a Raspberry Pi 5 with a 7" touchscreen, built for someone who should never have to learn an interface.
 
-Everything is on a single screen. The right side shows pages of big album covers with up/down arrows when there is more than one page. Tap a cover and it plays from the first song. The left side shows what is playing with a big Play/Pause, Next, and volume minus/plus. The playing album gets a gold border. Songs play through in order and stop at the end of the album. Tapping the album that is already playing does nothing, so a stray tap never restarts it.
+Everything is on a single screen. The right side shows pages of big album covers with up/down arrows when there is more than one page. Tap a cover and it plays from the first song. The left side shows what is playing with a big Play/Pause and Next. Volume is controlled on the speakers. The playing album gets a gold border. Songs play through in order and stop at the end of the album. Tapping the album that is already playing does nothing, so a stray tap never restarts it.
 
 Runs entirely as the normal desktop user on the Pi. No sudo needed.
 
@@ -12,7 +12,7 @@ Runs entirely as the normal desktop user on the Pi. No sudo needed.
 - `nonafi/static/` is the UI, one page sized for 1024x600.
 - `pi/nonafi.service` runs the server as a systemd user service.
 - `pi/kiosk.sh` launches Chromium full-screen on the touchscreen, started from `~/.config/labwc/autostart`.
-- Volume buttons set the real system volume through PipeWire (`wpctl`).
+- On startup the server sets the Pi output to full volume and unmuted through PipeWire (`wpctl`), so the speakers' own volume control has its whole range.
 - After ten minutes without a touch the page fades to about 30% brightness. The next touch only wakes it, so a wake-up tap can never start an album. The panel is an LCD, so there is no burn-in risk; this just saves backlight and stray light at night.
 - The server listens on localhost only. The kiosk is the only client, so nothing is exposed to the network. Set `NONAFI_HOST=0.0.0.0` in the service file if you want to open the page from another device.
 - Chromium's remote debugging port stays off unless `~/.config/nonafi/debug` exists on the Pi. It is handy for driving the UI from a script while developing.

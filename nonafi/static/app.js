@@ -7,7 +7,6 @@
   let current = null;   // album being played
   let index = 0;        // song index in that album
   let page = 0;
-  let volume = 50;
 
   // ---- album pages ----------------------------------------------------
   async function loadAlbums() {
@@ -101,31 +100,6 @@
   audio.addEventListener("timeupdate", () => {
     $("bar").style.width = (audio.duration ? (audio.currentTime / audio.duration) * 100 : 0) + "%";
   });
-
-  // ---- volume (real system volume, via the server) ---------------------
-  function renderVolume() {
-    const m = $("vol-meter");
-    m.innerHTML = "";
-    for (let i = 1; i <= 10; i++) {
-      const s = document.createElement("i");
-      if (volume >= i * 10 - 5) s.classList.add("on");
-      m.appendChild(s);
-    }
-  }
-  async function setVolume(v) {
-    volume = Math.max(0, Math.min(100, v));
-    renderVolume();
-    try {
-      const res = await fetch("/api/volume", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ volume }) });
-      const data = await res.json();
-      if (typeof data.volume === "number") { volume = data.volume; renderVolume(); }
-    } catch (e) {}
-  }
-  $("vol-up").addEventListener("click", () => setVolume(volume + 10));
-  $("vol-down").addEventListener("click", () => setVolume(volume - 10));
-  fetch("/api/volume").then(r => r.json()).then(d => { if (typeof d.volume === "number") volume = d.volume; renderVolume(); })
-    .catch(renderVolume);
 
   // No long-press menus, no pinch zoom.
   document.addEventListener("contextmenu", (e) => e.preventDefault());
