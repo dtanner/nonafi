@@ -10,6 +10,10 @@ for _ in $(seq 1 60); do
   sleep 1
 done
 
+# Opt-in remote debugging (localhost only), used for driving the UI from scripts during development.
+DEBUG_FLAGS=()
+[ -e "$HOME/.config/nonafi/debug" ] && DEBUG_FLAGS=(--remote-debugging-port=9222 --remote-allow-origins=http://127.0.0.1:9222)
+
 exec chromium \
   --kiosk "$URL" \
   --ozone-platform=wayland \
@@ -20,4 +24,4 @@ exec chromium \
   --touch-events=enabled --disable-pinch --overscroll-history-navigation=0 \
   --check-for-update-interval=31536000 \
   --password-store=basic --disable-component-update \
-  --remote-debugging-port=9222 --remote-allow-origins=http://127.0.0.1:9222
+  "${DEBUG_FLAGS[@]}"

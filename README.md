@@ -13,6 +13,8 @@ Runs entirely as the normal desktop user on the Pi. No sudo needed.
 - `pi/nonafi.service` runs the server as a systemd user service.
 - `pi/kiosk.sh` launches Chromium full-screen on the touchscreen, started from `~/.config/labwc/autostart`.
 - Volume buttons set the real system volume through PipeWire (`wpctl`).
+- The server listens on localhost only. The kiosk is the only client, so nothing is exposed to the network. Set `NONAFI_HOST=0.0.0.0` in the service file if you want to open the page from another device.
+- Chromium's remote debugging port stays off unless `~/.config/nonafi/debug` exists on the Pi. It is handy for driving the UI from a script while developing.
 
 ## Adding music
 
@@ -42,13 +44,18 @@ just use-sink 58     # switch output, e.g. to USB speakers
 just dev             # run the server on the Mac against ./music
 ```
 
-The Pi host defaults to `admin@192.168.1.70`; override with `PI_HOST=admin@piaudio.local just deploy`.
+### Pointing at your Pi
+
+Copy `.env.example` to `.env` and set `PI_HOST` to your Pi's SSH target, for example `pi@raspberrypi.local`. The file is git-ignored. You need key-based SSH to the Pi; nothing here requires sudo.
+
+The Pi needs Raspberry Pi OS (Bookworm or later) with the desktop auto-logging in, plus `chromium`, `python3`, and `rsync`, which the standard image includes.
 
 ## Switching to USB speakers
 
 Plug them in, run `just sinks`, and `just use-sink <id>` on the new one. If the speakers show up as a device but not a sink, the USB device may need its profile enabled:
 
 ```bash
-ssh admin@192.168.1.70 'wpctl status'            # find the device id under Devices
-ssh admin@192.168.1.70 'wpctl set-profile <device-id> 1'
+just ssh
+wpctl status                       # find the device id under Devices
+wpctl set-profile <device-id> 1
 ```

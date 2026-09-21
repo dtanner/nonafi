@@ -82,7 +82,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         path = self.path.split("?", 1)[0]
         length = int(self.headers.get("Content-Length") or 0)
-        body = json.loads(self.rfile.read(length) or b"{}") if length else {}
+        if length > 4096:
+            return self._error(HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+        try:
+            body = json.loads(self.rfile.read(length) or b"{}") if length else {}
+        except ValueError:
+            return self._error(HTTPStatus.BAD_REQUEST)
         if path == "/api/volume":
             return self._json({"volume": set_volume(int(body.get("volume", 50)))})
         if path == "/api/rescan":
@@ -157,17 +162,20 @@ def main(argv=None):
     argv = argv if argv is not None else sys.argv[1:]
     music = Path(os.environ.get("NONAFI_MUSIC", "~/Music")).expanduser()
     port = int(os.environ.get("NONAFI_PORT", "8080"))
+    host = os.environ.get("NONAFI_HOST", "127.0.0.1")
     for i, a in enumerate(argv):
         if a == "--music":
             music = Path(argv[i + 1]).expanduser()
         if a == "--port":
             port = int(argv[i + 1])
+        if a == "--host":
+            host = argv[i + 1]
     lib = Library(music)
     lib.refresh_if_changed()
     Handler.library = lib
-    server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+    server = ThreadingHTTPServer((host, port), Handler)
     server.daemon_threads = True
-    print(f"nonafi: {len(lib.albums)} albums from {music}, listening on http://0.0.0.0:{port}", flush=True)
+    print(f"nonafi: {len(lib.albums)} albums from {music}, listening on http://{host}:{port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

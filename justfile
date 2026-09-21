@@ -2,8 +2,10 @@
 # Run `just` to list commands.
 
 set positional-arguments
+set dotenv-load
 
-pi_host := env_var_or_default("PI_HOST", "admin@192.168.1.70")
+# SSH target for the Pi. Put `PI_HOST=user@host` in a `.env` file (git-ignored) or export it.
+pi_host := env_var_or_default("PI_HOST", "pi@raspberrypi.local")
 pi_path := "~/nonafi"
 
 default:
