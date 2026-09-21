@@ -66,8 +66,25 @@
     const t = current.tracks[index] || {};
     $("cover").src = current.cover;
     $("album-title").textContent = current.title;
-    $("track-title").textContent = t.title || "";
+    setTrackTitle(t.title || "");
     $("toggle").classList.toggle("playing", !audio.paused);
+  }
+
+  // Song names that don't fit scroll back and forth; the animation restarts only when the name changes.
+  function setTrackTitle(title) {
+    const box = $("track-title"), text = $("track-text");
+    if (text.textContent === title && box.dataset.measured) return;
+    text.textContent = title;
+    box.classList.remove("scroll");
+    box.dataset.measured = "";
+    requestAnimationFrame(() => {
+      const overflow = text.scrollWidth - box.clientWidth;
+      box.dataset.measured = "1";
+      if (overflow <= 0) return;
+      box.style.setProperty("--marquee-shift", `-${overflow + 4}px`);
+      box.style.setProperty("--marquee-time", `${Math.max(6, overflow / 25)}s`);
+      box.classList.add("scroll");
+    });
   }
 
   $("toggle").addEventListener("click", () => {
@@ -77,6 +94,13 @@
   $("next").addEventListener("click", () => {
     if (!current) return;
     index = (index + 1) % current.tracks.length;
+    playTrack();
+  });
+  $("prev").addEventListener("click", () => {
+    if (!current) return;
+    // A few seconds in (or on the first song), restart this song; otherwise go back one.
+    if (audio.currentTime > 3 || index === 0) { audio.currentTime = 0; audio.play().catch(() => {}); return; }
+    index -= 1;
     playTrack();
   });
 

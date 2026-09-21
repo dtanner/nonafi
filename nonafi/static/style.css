@@ -28,7 +28,14 @@ body { display: flex; }
 .title { font-size: 30px; font-weight: 800; line-height: 1.15; margin-top: 14px; text-align: center;
   overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .track { font-size: 25px; font-weight: 700; color: var(--accent); margin-top: 6px; text-align: center;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  white-space: nowrap; overflow: hidden; }
+.track span { display: inline-block; }
+/* Song names wider than the panel scroll back and forth, pausing at each end. */
+.track.scroll span { animation: marquee var(--marquee-time, 8s) ease-in-out infinite alternate; }
+@keyframes marquee {
+  0%, 18% { transform: translateX(0); }
+  82%, 100% { transform: translateX(var(--marquee-shift, 0)); }
+}
 .progress { height: 8px; background: var(--btn); border-radius: 4px; margin-top: 12px; overflow: hidden; }
 #bar { height: 100%; width: 0; background: var(--accent); }
 .controls { display: flex; gap: 16px; margin-top: auto; padding-top: 14px; }
@@ -38,8 +45,8 @@ body { display: flex; }
 .play #icon-pause, .play.playing #icon-play { display: none; }
 .play.playing #icon-pause { display: block; }
 .play:active { background: #ffc85c; }
-.skip { width: 130px; height: 116px; }
-.skip svg { width: 56px; height: 56px; }
+.skip { width: 100px; height: 116px; }
+.skip svg { width: 52px; height: 52px; }
 
 /* Right: album pages */
 #library { flex: 1; position: relative; display: flex; }

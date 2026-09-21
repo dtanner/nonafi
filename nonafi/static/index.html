@@ -17,9 +17,12 @@
   <div id="playing" hidden>
     <img id="cover" alt="">
     <div id="album-title" class="title"></div>
-    <div id="track-title" class="track"></div>
+    <div id="track-title" class="track"><span id="track-text"></span></div>
     <div class="progress"><div id="bar"></div></div>
     <div class="controls">
+      <button id="prev" class="btn skip" aria-label="Previous song">
+        <svg viewBox="0 0 24 24"><path d="M5 5h3v14H5z"/><path d="M19 5v14l-9-7z"/></svg>
+      </button>
       <button id="toggle" class="btn play" aria-label="Play or pause">
         <svg id="icon-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg>
         <svg id="icon-pause" viewBox="0 0 24 24"><path d="M6 4.5h4v15H6zM14 4.5h4v15h-4z"/></svg>
