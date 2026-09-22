@@ -5,7 +5,7 @@ Runs as its own process (`python -m nonafi.voice`) beside the server. Audio come
 
 Environment:
   NONAFI_MIC       ALSA device, default: first USB capture card (plughw:CARD=...)
-  NONAFI_WAKEWORD  openWakeWord model name or .onnx path, default "hey_jarvis"
+  NONAFI_WAKEWORD  openWakeWord model name or .onnx path, default: the bundled models/hey_device.onnx
   NONAFI_WAKE_THRESHOLD  0..1, default 0.5
   NONAFI_WHISPER   faster-whisper model, default "base.en"
   NONAFI_URL       server base URL, default http://127.0.0.1:8080
@@ -24,6 +24,7 @@ import urllib.request
 import numpy as np
 
 RATE = 16000
+DEFAULT_WAKEWORD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "hey_device.onnx")
 CHUNK = 1280                 # 80 ms, the frame size openWakeWord expects
 MAX_COMMAND_S = 5.0          # stop listening after this long
 SILENCE_S = 0.9              # ...or after this much quiet once speech has started
@@ -148,12 +149,14 @@ def main(argv=None):
     from faster_whisper import WhisperModel
 
     url = os.environ.get("NONAFI_URL", "http://127.0.0.1:8080")
-    wake = os.environ.get("NONAFI_WAKEWORD", "hey_jarvis")
+    wake = os.environ.get("NONAFI_WAKEWORD", DEFAULT_WAKEWORD)
     threshold = float(os.environ.get("NONAFI_WAKE_THRESHOLD", "0.5"))
     whisper_name = os.environ.get("NONAFI_WHISPER", "base.en")
     mic = find_mic()
 
-    if not wake.endswith(".onnx") and not os.path.exists(wake):
+    if wake.endswith(".onnx") or os.path.exists(wake):
+        ensure_feature_models()
+    else:
         download_models([wake])
     oww = Model(wakeword_models=[wake], inference_framework="onnx")
     wake_key = list(oww.models)[0]
@@ -194,6 +197,18 @@ def main(argv=None):
         if cmd:
             log("command:", cmd)
             post(url, cmd)
+
+
+def ensure_feature_models() -> None:
+    """A custom .onnx wake word still needs openWakeWord's melspectrogram and embedding models."""
+    import openwakeword
+    from openwakeword.utils import download_file
+    target = os.path.join(os.path.dirname(openwakeword.__file__), "resources", "models")
+    os.makedirs(target, exist_ok=True)
+    for m in openwakeword.FEATURE_MODELS.values():
+        url = m["download_url"].replace(".tflite", ".onnx")
+        if not os.path.exists(os.path.join(target, url.rsplit("/", 1)[-1])):
+            download_file(url, target)
 
 
 def record_command(proc: subprocess.Popen) -> np.ndarray:

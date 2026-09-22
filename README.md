@@ -47,7 +47,7 @@ Do these in order. Steps 1 and 2 are on the Mac; the rest happen through `just`.
 1. **Mac tools.** `brew install just`. Clone this repo.
 2. **Point at the Pi.** Copy `.env.example` to `.env` and set `PI_HOST` to the Pi's SSH target, for example `admin@nonafi` or `admin@192.168.1.70`. The file is git-ignored. Every `just` command uses it. You need passwordless SSH to the Pi: either `ssh-copy-id` a key, or Tailscale SSH (see [Remote access](#remote-access)).
 3. **The Pi.** Raspberry Pi OS with desktop, Bookworm or later, set to auto-login to the desktop (the current Pi runs Debian 13 "trixie"). The desktop session must be labwc, which is the default on a Pi 5; `just deploy` writes to `~/.config/labwc/autostart`. Everything else it needs is in the standard image: `chromium`, `python3`, `rsync`, `curl`, `grim`, `wpctl`, `arecord`, `squeekboard`. Enable SSH in raspi-config or the imager.
-4. **Deploy.** `just deploy`. This rsyncs the repo to `~/nonafi` on the Pi, creates `.venv` there, installs the Python deps, installs and starts the two systemd user services, runs `pi/setup-desktop.sh` (on-screen keyboard and the Jukebox launcher), adds the kiosk to labwc's autostart, and launches the kiosk. The first run downloads the wake-word and whisper models, so the Pi needs internet and the voice service takes a minute to come up.
+4. **Deploy.** `just deploy`. This rsyncs the repo to `~/nonafi` on the Pi, creates `.venv` there, installs the Python deps, installs and starts the two systemd user services, runs `pi/setup-desktop.sh` (on-screen keyboard and the Jukebox launcher), adds the kiosk to labwc's autostart, and launches the kiosk. The first run downloads the openWakeWord feature models and the whisper model, so the Pi needs internet and the voice service takes a minute to come up.
 5. **Music.** `just upload ~/Music/Mom/*`. See [Adding music](#adding-music) for the folder layout.
 6. **Speakers.** Plug them in, `just sinks`, then `just use-sink <id>` on the new one. See [Audio output](#audio-output) if they do not show up as a sink.
 7. **Microphone.** Plug in any USB mic. The voice service picks the first USB capture card automatically. `just restart-voice` after plugging one in, then `just voice-logs` should show a `ready:` line naming it.
@@ -114,7 +114,7 @@ That setting is not remembered across reboots. `pi/wireplumber/51-usb-speaker.co
 
 ## Voice control
 
-Say **"Hey Jarvis"**, wait for the chime, then:
+Say **"Hey device"**, wait for the chime, then:
 
 - "play music" — resumes, or picks a random artist if nothing is up
 - "play [artist name]" — fuzzy-matched against the artist names, so close is good enough ("beatles" finds The Beatles). "put on" and "start" work like "play".
@@ -137,7 +137,7 @@ Settings are environment variables. To change one, add a line like `Environment=
 - `NONAFI_WAKE_THRESHOLD` — default 0.5. Raise it if it false-triggers, lower it if it misses you. `just voice-logs` shows the score on each trigger.
 - `NONAFI_WHISPER` — default `base.en`. `small.en` is more accurate and slower.
 - `NONAFI_MIC` — an ALSA device such as `plughw:CARD=Device`. Defaults to the first USB capture card from `arecord -l`.
-- `NONAFI_WAKEWORD` — default `hey_jarvis`, a stock openWakeWord model. "Hey Nona" needs a custom model trained with openWakeWord's training notebook; copy the resulting `.onnx` to the Pi and set this to its full path.
+- `NONAFI_WAKEWORD` — default `nonafi/models/hey_device.onnx`, a custom model trained with `just train-wakeword` (see `wakeword/README.md`). Set it to a stock openWakeWord name such as `hey_jarvis` or to another `.onnx` path.
 
 ## Remote access
 
@@ -162,7 +162,7 @@ NetworkManager keeps every saved network and connects to whichever is present. A
 - **Blank or error page on the screen.** The server is down. `just logs` shows why; `just restart` restarts it. The kiosk waits up to a minute for the server before loading, so after a reboot give it that long.
 - **Screen shows the Pi desktop instead of the jukebox.** Setup mode is on. `just resume-kiosk`, or tap the Jukebox icon. If that does not help, `just restart-kiosk`.
 - **No sound.** `just sinks` and check the starred sink is the speakers. `just use-sink <id>` also resets volume to full and unmutes.
-- **Voice does nothing.** `just voice-logs`. No `ready:` line means the service failed to start, usually a missing mic (`arecord -l` on the Pi) or a model download that needs internet. Scores below the threshold on every "Hey Jarvis" mean lower `NONAFI_WAKE_THRESHOLD`.
+- **Voice does nothing.** `just voice-logs`. No `ready:` line means the service failed to start, usually a missing mic (`arecord -l` on the Pi) or a model download that needs internet. Scores below the threshold on every "Hey device" mean lower `NONAFI_WAKE_THRESHOLD`.
 - **Music missing after upload.** `just list` to confirm the folder landed in `~/Music`, and check the folder holds audio files, not a nested extra folder with a different name than you expect. Tiles refresh within 15 seconds.
 - **Check everything at once.** `just ssh`, then `systemctl --user status nonafi nonafi-voice` and `pgrep -af chromium`.
 
@@ -170,7 +170,7 @@ NetworkManager keeps every saved network and connects to whichever is present. A
 
 - `nonafi/` is a small Python web server (standard library only, plus mutagen for tags and Pillow for covers). It scans `~/Music` on the Pi, groups songs by artist, and serves a single-page UI plus the audio files.
 - `nonafi/static/` is the UI, one page sized for 1024x600.
-- `nonafi/voice.py` is the voice service, a separate process.
+- `nonafi/voice.py` is the voice service, a separate process. `nonafi/models/hey_device.onnx` is its wake-word model; `wakeword/` retrains it.
 - `pi/nonafi.service` and `pi/nonafi-voice.service` are the systemd user units. `just deploy` copies them to `~/.config/systemd/user/`.
 - `pi/kiosk.sh` launches Chromium full-screen on the touchscreen, started from `~/.config/labwc/autostart` via `lwrespawn` so it comes back if it dies.
 - `import/` turns Audio Hijack rips into the tagged library on the Mac. See [import/README.md](import/README.md).

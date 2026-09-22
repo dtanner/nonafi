@@ -35,6 +35,10 @@ sync:
 restart:
     ssh {{pi_host}} 'systemctl --user restart nonafi.service && sleep 1 && systemctl --user is-active nonafi.service'
 
+# Retrain the "hey device" wake-word model on this Mac (see wakeword/README.md), writing nonafi/models/hey_device.onnx.
+train-wakeword:
+    bash wakeword/train.sh
+
 # Restart the voice service.
 restart-voice:
     ssh {{pi_host}} 'systemctl --user restart nonafi-voice.service && sleep 1 && systemctl --user is-active nonafi-voice.service'
