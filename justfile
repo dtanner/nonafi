@@ -16,8 +16,9 @@ deploy: sync
     ssh {{pi_host}} 'cd {{pi_path}} && \
       [ -x .venv/bin/python ] || python3 -m venv --system-site-packages .venv && \
       .venv/bin/pip install -q -e '.[voice]' && .venv/bin/pip install -q --no-deps openwakeword && \
-      mkdir -p ~/.config/systemd/user ~/.config/labwc ~/Music && \
+      mkdir -p ~/.config/systemd/user ~/.config/labwc ~/.config/wireplumber/wireplumber.conf.d ~/Music && \
       cp pi/nonafi.service pi/nonafi-voice.service ~/.config/systemd/user/ && \
+      cp pi/wireplumber/*.conf ~/.config/wireplumber/wireplumber.conf.d/ && \
       systemctl --user daemon-reload && \
       systemctl --user enable --now nonafi.service nonafi-voice.service && \
       systemctl --user restart nonafi.service nonafi-voice.service && \
@@ -71,11 +72,11 @@ resume-kiosk:
 
 # Show audio output devices (sinks) on the Pi; the starred one is in use.
 sinks:
-    ssh {{pi_host}} 'wpctl status | sed -n "/Sinks:/,/Sources:/p"'
+    ssh {{pi_host}} 'XDG_RUNTIME_DIR=/run/user/$(id -u) wpctl status | sed -n "/Sinks:/,/Sources:/p"'
 
 # Make a sink the default output, e.g. `just use-sink 58` (id from `just sinks`). Persists across reboots.
 use-sink id:
-    ssh {{pi_host}} 'wpctl set-default {{id}} && wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0 && wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl get-volume @DEFAULT_AUDIO_SINK@'
+    ssh {{pi_host}} 'export XDG_RUNTIME_DIR=/run/user/$(id -u); wpctl set-default {{id}} && wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0 && wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl get-volume @DEFAULT_AUDIO_SINK@'
 
 # List what music is on the Pi.
 list:

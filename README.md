@@ -110,6 +110,8 @@ wpctl status                       # find the device id under Devices
 wpctl set-profile <device-id> 1
 ```
 
+That setting is not remembered across reboots. `pi/wireplumber/51-usb-speaker.conf` (installed by `just deploy`) forces it on for the Creative Pebble V3; add a rule there for any other speaker that needs it.
+
 ## Voice control
 
 Say **"Hey Jarvis"**, wait for the chime, then:
