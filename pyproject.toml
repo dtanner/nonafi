@@ -8,6 +8,7 @@ dependencies = ["mutagen>=1.47", "pillow>=10"]
 [project.optional-dependencies]
 # openwakeword is installed with --no-deps (it pins tflite-runtime, which has no Python 3.13 wheels);
 # the ONNX backend only needs these.
+import = ["requests"]   # import/ scripts (mutagen comes from the main deps)
 voice = ["numpy", "onnxruntime", "scipy", "scikit-learn", "tqdm", "requests", "faster-whisper>=1.1"]
 
 [build-system]

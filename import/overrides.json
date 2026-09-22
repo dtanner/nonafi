@@ -1,0 +1,57 @@
+{
+ "album_rename": {
+  "1": "Beatles Collection",
+  "Abbey Road (Super Deluxe Edition) [2019 Remix & Remaster]": "Beatles Collection",
+  "Help!": "Beatles Collection",
+  "Let It Be (2021 Mix)": "Beatles Collection",
+  "Revolver (2022 Mix)": "Beatles Collection",
+  "Rubber Soul": "Beatles Collection",
+  "Magical Mystery Tour": "Beatles Collection",
+  "The Beatles (The White Album)": "Beatles Collection",
+  "Please Please Me": "Beatles Collection",
+  "Sgt. Pepper's Lonely Hearts Club Band (2017 Mix)": "Beatles Collection",
+  "The Beatles 1967-1970 (The Blue Album)": "Beatles Collection",
+  "With The Beatles": "Beatles Collection",
+  "A Hard Day's Night": "Beatles Collection",
+  "Abbey Road (2019 Mix)": "Beatles Collection",
+  "Past Masters, Vols. 1 & 2": "Beatles Collection",
+  "Revolver (Super Deluxe)": "Beatles Collection",
+  "Beatles For Sale": "Beatles Collection",
+  "Revolver": "Beatles Collection",
+  "The Long Black Veil": "Chieftains Collection",
+  "Irish Heartbeat": "Chieftains Collection",
+  "The Chieftains 8": "Chieftains Collection",
+  "The Chieftains 9: Boil the Breakfast Early": "Chieftains Collection",
+  "Voice of Ages (Deluxe Edition)": "Chieftains Collection",
+  "The Bells Of Dublin": "Chieftains Collection",
+  "The Essential Chieftains": "Chieftains Collection",
+  "Water From The Well": "Chieftains Collection",
+  "The Chieftains 7": "Chieftains Collection",
+  "Chronicles: 60 Years of The Chieftains (Deluxe)": "Chieftains Collection",
+  "The Chieftains 1": "Chieftains Collection",
+  "San Patricio": "Chieftains Collection",
+  "Further Down the Old Plank Road": "Chieftains Collection",
+  "The Essential James Galway": "Chieftains Collection"
+ },
+ "album_artist": {
+  "Beatles Collection": "The Beatles",
+  "Chieftains Collection": "The Chieftains"
+ },
+ "artwork_from": {
+  "Beatles Collection": [
+   "The Beatles",
+   "1"
+  ],
+  "Chieftains Collection": [
+   "The Chieftains",
+   "The Essential Chieftains"
+  ]
+ },
+ "skip_files": [
+  "App Recording 20260920 2249.mp3",
+  "App Recording 20260920 2252.mp3",
+  "App Recording 20260920 2255.mp3",
+  "App Recording 20260920 2257.mp3",
+  "App Recording 20260920 2301.mp3"
+ ]
+}

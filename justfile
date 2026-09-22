@@ -21,6 +21,7 @@ deploy: sync
       systemctl --user daemon-reload && \
       systemctl --user enable --now nonafi.service nonafi-voice.service && \
       systemctl --user restart nonafi.service nonafi-voice.service && \
+      bash pi/setup-desktop.sh && \
       grep -q nonafi/pi/kiosk.sh ~/.config/labwc/autostart 2>/dev/null || \
         echo "/usr/bin/lwrespawn $HOME/nonafi/pi/kiosk.sh &" >> ~/.config/labwc/autostart'
     just restart-kiosk
@@ -60,6 +61,14 @@ remove folder:
     ssh {{pi_host}} "cd ~/Music && rm -rv '{{folder}}'"
     ssh {{pi_host}} 'curl -s -X POST http://127.0.0.1:8080/api/rescan; echo'
 
+# Leave the kiosk for the Pi desktop (same as holding the left panel on the touchscreen).
+setup-mode:
+    ssh {{pi_host}} 'curl -s -X POST http://127.0.0.1:8080/api/setup; echo'
+
+# Bring the kiosk back from the desktop (same as tapping the Jukebox icon in the top bar).
+resume-kiosk:
+    ssh {{pi_host}} 'rm -f ~/.config/nonafi/setup; echo resumed'
+
 # Show audio output devices (sinks) on the Pi; the starred one is in use.
 sinks:
     ssh {{pi_host}} 'wpctl status | sed -n "/Sinks:/,/Sources:/p"'
@@ -88,3 +97,21 @@ ssh:
 # Run the server locally on this Mac against ./music for development.
 dev:
     python3 -m venv .venv 2>/dev/null; .venv/bin/pip install -q -e . && NONAFI_DEBUG=1 .venv/bin/python -m nonafi --music ./music --port 8080
+
+# --- Importing rips (see import/README.md) ---
+
+# Name and file one rip by listing its songs in order: `just import-add ~/Music/"Audio Hijack"/"App Recording 20260921 1829.mp3" "Blackbird" "Yesterday"`.
+import-add rip +titles:
+    .venv/bin/pip install -q -e '.[import]' 2>/dev/null; .venv/bin/python import/add.py "$@"
+
+# Show how the unnamed rips line up with the playlist, without writing anything.
+import-align:
+    .venv/bin/pip install -q -e '.[import]' 2>/dev/null; .venv/bin/python import/align.py
+
+# Write the aligned rips into the library (split, tag, artwork). Safe to re-run.
+import-build:
+    .venv/bin/python import/build.py
+
+# Library health: songs and covers per artist, untagged files, and which playlist songs are still unripped.
+import-check:
+    .venv/bin/pip install -q -e '.[import]' 2>/dev/null; .venv/bin/python import/check.py
