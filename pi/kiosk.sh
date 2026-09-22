@@ -4,6 +4,14 @@ URL="http://127.0.0.1:8080/"
 export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
+# Setup mode: the page asked to leave the kiosk (flag written by /api/setup). Stay out until the
+# Jukebox launcher in the top bar removes the flag, or after 20 minutes as a safety net.
+FLAG="$HOME/.config/nonafi/setup"
+while [ -e "$FLAG" ]; do
+  [ -n "$(find "$FLAG" -mmin +20 2>/dev/null)" ] && rm -f "$FLAG" && break
+  sleep 2
+done
+
 # Wait for the server so the first page load isn't an error page.
 for _ in $(seq 1 60); do
   curl -fs -o /dev/null "$URL/api/artists" && break

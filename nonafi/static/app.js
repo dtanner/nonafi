@@ -209,6 +209,37 @@
   document.addEventListener("pointerdown", () => { wake(); touchSongs(); }, true);
   wake();
 
+  // ---- setup mode -----------------------------------------------------
+  // Holding a blank part of the left panel for six seconds asks to leave the kiosk for the Pi
+  // desktop, where Wi-Fi can be set up with the on-screen keyboard. Buttons and the cover are
+  // excluded so a long hold on them never triggers it.
+  const HOLD_MS = 6000, SETUP_TIMEOUT_MS = 20 * 1000;
+  const setup = $("setup");
+  let holdTimer, holdStart, setupTimer;
+  function cancelHold() { clearTimeout(holdTimer); holdTimer = null; }
+  $("panel").addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button, img")) return;
+    holdStart = { x: e.clientX, y: e.clientY };
+    cancelHold();
+    holdTimer = setTimeout(askSetup, HOLD_MS);
+  });
+  $("panel").addEventListener("pointermove", (e) => {
+    if (holdTimer && holdStart && Math.hypot(e.clientX - holdStart.x, e.clientY - holdStart.y) > 20) cancelHold();
+  });
+  for (const ev of ["pointerup", "pointercancel", "pointerleave"]) $("panel").addEventListener(ev, cancelHold);
+  function askSetup() {
+    setup.hidden = false;
+    clearTimeout(setupTimer);
+    setupTimer = setTimeout(closeSetup, SETUP_TIMEOUT_MS);
+  }
+  function closeSetup() { setup.hidden = true; clearTimeout(setupTimer); }
+  $("setup-cancel").addEventListener("click", closeSetup);
+  $("setup-go").addEventListener("click", () => {
+    audio.pause();
+    fetch("/api/setup", { method: "POST" }).catch(() => {});
+    closeSetup();
+  });
+
   // ---- voice commands -------------------------------------------------
   // The voice service posts to /api/command; the server relays it here over SSE.
   const banner = $("banner");

@@ -18,7 +18,7 @@ body { display: flex; }
 .btn:active { background: var(--btn-active); transform: scale(0.95); }
 
 /* Left panel: what is playing */
-#panel { width: 400px; flex: none; height: 100%; background: var(--panel); padding: 20px; display: flex; flex-direction: column; }
+#panel { width: 400px; flex: none; height: 100%; background: var(--panel); padding: 20px; display: flex; flex-direction: column; touch-action: none; }
 #idle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px; color: var(--muted); }
 .idle-icon { font-size: 110px; line-height: 1; color: var(--btn-active); }
 .idle-text { font-size: 30px; font-weight: 700; color: var(--fg); }
@@ -88,3 +88,11 @@ body { display: flex; }
 #banner { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 5;
   background: var(--accent); color: #1a1a1a; font-size: 28px; font-weight: 800; padding: 14px 32px; border-radius: 40px;
   max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+
+/* Setup mode confirmation, reached by holding the left panel for six seconds */
+#setup { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; }
+#setup .box { background: var(--panel); border-radius: 24px; padding: 32px; width: 640px; font-size: 24px; color: var(--muted); line-height: 1.35; }
+#setup .big { font-size: 40px; font-weight: 800; color: var(--fg); margin-bottom: 14px; }
+#setup .row { display: flex; gap: 16px; margin-top: 28px; }
+#setup .row .btn { flex: 1; height: 90px; font-size: 28px; }
+#setup .go { background: var(--accent); color: #1a1a1a; }

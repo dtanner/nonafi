@@ -17,6 +17,7 @@ from pathlib import Path
 from .library import Library
 
 STATIC = Path(__file__).parent / "static"
+SETUP_FLAG = Path.home() / ".config" / "nonafi" / "setup"
 MIME = {
     ".mp3": "audio/mpeg",
     ".m4a": "audio/mp4",
@@ -114,6 +115,13 @@ class Handler(BaseHTTPRequestHandler):
             self.library._signature = None
             changed = self.library.refresh_if_changed()
             return self._json({"artists": len(self.library.artists), "changed": changed})
+        if path == "/api/setup":
+            # Leave the kiosk so the Pi desktop (wifi menu, on-screen keyboard) can be used by touch.
+            # kiosk.sh waits while the flag exists; the Jukebox launcher in the top bar removes it.
+            SETUP_FLAG.parent.mkdir(parents=True, exist_ok=True)
+            SETUP_FLAG.touch()
+            subprocess.run(["pkill", "-f", "nonafi-kiosk"], timeout=5)
+            return self._json({"ok": True})
         if path == "/api/command":
             # From the voice service: {"action": "play"|"pause"|"next"|"play_artist"|"listening"|"heard", ...}
             if not isinstance(body, dict) or not body.get("action"):
