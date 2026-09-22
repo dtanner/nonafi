@@ -2,6 +2,8 @@
 
 A one-screen jukebox for a Raspberry Pi 5 with a 7" touchscreen, built for someone who should never have to learn an interface.
 
+![The jukebox playing The Beatles, with a page of artist tiles on the right](captures/playing.png)
+
 Everything is on a single screen. The right side shows pages of big artist tiles with up/down arrows when there is more than one page. Tap an artist and it plays all of their songs from the first one. The left side shows what is playing with a big Play/Pause, Previous, and Next. Volume is controlled on the speakers. The playing artist gets a gold border. Songs play through in order and stop at the end of the artist's list. Tapping the artist that is already playing does nothing, so a stray tap never restarts it. Tapping the cover or artist name on the left shows that artist's songs on the right, seven to a page with the same up/down arrows. Tap a song to play it, or the big Artists button to go back. The list also closes by itself after fifteen seconds without a touch.
 
 There are no albums in the interface. One artist, one tile, one list of songs.
