@@ -31,11 +31,25 @@
   "The Chieftains 1": "Chieftains Collection",
   "San Patricio": "Chieftains Collection",
   "Further Down the Old Plank Road": "Chieftains Collection",
-  "The Essential James Galway": "Chieftains Collection"
+  "The Essential James Galway": "Chieftains Collection",
+  "Beauty and the Beast (Original Motion Picture Soundtrack) [Deluxe Edition]": "Josh Groban Collection",
+  "Closer": "Josh Groban Collection",
+  "Stages (Deluxe Version)": "Josh Groban Collection",
+  "Bridges (Deluxe)": "Josh Groban Collection",
+  "Harmony (Deluxe)": "Josh Groban Collection",
+  "Harmony": "Josh Groban Collection",
+  "Josh Groban": "Josh Groban Collection",
+  "The Josh Groban Collection": "Josh Groban Collection",
+  "Illuminations (Deluxe Version)": "Josh Groban Collection",
+  "All That Echoes": "Josh Groban Collection",
+  "Awake (Special Edition)": "Josh Groban Collection",
+  "Noël (Deluxe Edition)": "Josh Groban Collection",
+  "The Polar Express (Soundtrack from the Motion Picture)": "Josh Groban Collection"
  },
  "album_artist": {
   "Beatles Collection": "The Beatles",
-  "Chieftains Collection": "The Chieftains"
+  "Chieftains Collection": "The Chieftains",
+  "Josh Groban Collection": "Josh Groban"
  },
  "artwork_from": {
   "Beatles Collection": [
@@ -45,6 +59,10 @@
   "Chieftains Collection": [
    "The Chieftains",
    "The Essential Chieftains"
+  ],
+  "Josh Groban Collection": [
+   "Josh Groban",
+   "Closer"
   ]
  },
  "skip_files": [

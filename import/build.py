@@ -22,9 +22,10 @@ art_source = OVERRIDES.get('artwork_from', {})
 
 
 def clean_title(t):
-    """Drop streaming-catalog suffixes like "(2019 Mix)" or "(2022 Remaster)"; keep "(Live)"."""
+    """Drop catalog suffixes like "(2019 Mix)", "(2022 Remaster)", "(From \"Show\")", "[feat. X]"; keep "(Live)" and "(Duet with X)"."""
     t = re.sub(r'\s*[\(\[](\d{4} (Remaster|Mix)|"Greatest Hits" Version|Original Version|Live - \d{4} Remaster)[\)\]]',
                lambda m: ' (Live)' if m.group(1).startswith('Live') else '', t)
+    t = re.sub(r'\s*[\(\[](From "[^"\)\]]*"|feat\. [^\)\]]*)[\)\]]', '', t)   # (From "Les Misérables"), [feat. X]
     return t.strip()
 
 
