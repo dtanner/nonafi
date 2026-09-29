@@ -3,6 +3,7 @@ name = "nonafi"
 version = "0.1.0"
 description = "A one-screen touchscreen jukebox for a Raspberry Pi"
 requires-python = ">=3.11"
+license = "MIT"
 dependencies = ["mutagen>=1.47", "pillow>=10"]
 
 [project.optional-dependencies]
@@ -12,7 +13,7 @@ import = ["requests"]   # import/ scripts (mutagen comes from the main deps)
 voice = ["numpy", "onnxruntime", "scipy", "scikit-learn", "tqdm", "requests", "faster-whisper>=1.1"]
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
