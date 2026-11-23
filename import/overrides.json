@@ -44,12 +44,22 @@
   "All That Echoes": "Josh Groban Collection",
   "Awake (Special Edition)": "Josh Groban Collection",
   "Noël (Deluxe Edition)": "Josh Groban Collection",
-  "The Polar Express (Soundtrack from the Motion Picture)": "Josh Groban Collection"
+  "The Polar Express (Soundtrack from the Motion Picture)": "Josh Groban Collection",
+  "Anthology": "Jim Reeves Collection",
+  "The Essential Jim Reeves": "Jim Reeves Collection",
+  "Gentleman Jim": "Jim Reeves Collection",
+  "Yours Sincerely": "Jim Reeves Collection",
+  "The International Jim Reeves": "Jim Reeves Collection",
+  "20 Songs of Inspiration": "Jim Reeves Collection",
+  "The Best of Jim Reeves": "Jim Reeves Collection",
+  "Up Through the Years": "Jim Reeves Collection",
+  "Songs of Love": "Jim Reeves Collection"
  },
  "album_artist": {
   "Beatles Collection": "The Beatles",
   "Chieftains Collection": "The Chieftains",
-  "Josh Groban Collection": "Josh Groban"
+  "Josh Groban Collection": "Josh Groban",
+  "Jim Reeves Collection": "Jim Reeves"
  },
  "artwork_from": {
   "Beatles Collection": [
@@ -63,6 +73,10 @@
   "Josh Groban Collection": [
    "Josh Groban",
    "Closer"
+  ],
+  "Jim Reeves Collection": [
+   "Jim Reeves",
+   "The Essential Jim Reeves"
   ]
  },
  "skip_files": [
