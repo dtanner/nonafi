@@ -53,13 +53,25 @@
   "20 Songs of Inspiration": "Jim Reeves Collection",
   "The Best of Jim Reeves": "Jim Reeves Collection",
   "Up Through the Years": "Jim Reeves Collection",
-  "Songs of Love": "Jim Reeves Collection"
+  "Songs of Love": "Jim Reeves Collection",
+  "Danny Boy": "John McDermott Collection",
+  "Remembrance": "John McDermott Collection",
+  "The Irish Tenors": "John McDermott Collection",
+  "Timeless Memories: Greatest Hits": "John McDermott Collection",
+  "Philadelphia's Fields (The Ballad of Stephen Moylan) - Single": "John McDermott Collection",
+  "Sacred: A Spiritual Journey": "John McDermott Collection",
+  "Songs of the Isles – Ireland": "John McDermott Collection",
+  "A Time to Remember": "John McDermott Collection",
+  "Songs of the Isles - Scotland": "John McDermott Collection",
+  "Robbie Burns: The Bard of Ayrshire & the Ploughman Poet": "John McDermott Collection",
+  "Images of Christmas": "John McDermott Collection"
  },
  "album_artist": {
   "Beatles Collection": "The Beatles",
   "Chieftains Collection": "The Chieftains",
   "Josh Groban Collection": "Josh Groban",
-  "Jim Reeves Collection": "Jim Reeves"
+  "Jim Reeves Collection": "Jim Reeves",
+  "John McDermott Collection": "John McDermott"
  },
  "artwork_from": {
   "Beatles Collection": [
@@ -77,6 +89,10 @@
   "Jim Reeves Collection": [
    "Jim Reeves",
    "The Essential Jim Reeves"
+  ],
+  "John McDermott Collection": [
+   "John McDermott",
+   "Danny Boy"
   ]
  },
  "skip_files": [
